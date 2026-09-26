@@ -70,7 +70,7 @@ export function IntersectionGrid({ locale, baseUrl, messages: propMessages }: In
 
   const isComplete = status === "complete";
 
-  // The verdict of the last guess shows in the action bar until the next
+  // The verdict of the last guess shows in the side panel until the next
   // one. It never sits above the board, so the cells do not move.
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const announcements = useRef(0);
@@ -152,7 +152,7 @@ export function IntersectionGrid({ locale, baseUrl, messages: propMessages }: In
 
   if (status === "loading") {
     return (
-      <section id="grid" class="game-card state" aria-live="polite" aria-busy="true">
+      <section id="grid" class="game-card game-card--wide state" aria-live="polite" aria-busy="true">
         <span class="loader" aria-hidden="true" />
         <p>{messages.loading}</p>
       </section>
@@ -162,7 +162,7 @@ export function IntersectionGrid({ locale, baseUrl, messages: propMessages }: In
   if (status === "error" || !grid) {
     const errorMsg = errorKind === "missing" ? messages.artifactMissing : messages.loadError;
     return (
-      <section id="grid" class="game-card state" aria-live="polite">
+      <section id="grid" class="game-card game-card--wide state" aria-live="polite">
         <p>{errorMsg}</p>
         <button class="btn btn-primary" type="button" onClick={reload}>
           {messages.retry}
@@ -197,53 +197,56 @@ export function IntersectionGrid({ locale, baseUrl, messages: propMessages }: In
   }
 
   return (
-    <section id="grid" class="game-card grid-game" aria-labelledby="grid-hud-heading">
+    <section id="grid" class="game-card game-card--wide grid-game" aria-labelledby="grid-hud-heading">
       <h2 id="grid-hud-heading" class="visually-hidden">
         {messages.gridTitle}
       </h2>
 
-      <GridBoard
-        grid={grid}
-        cellStates={cells}
-        selectedCell={selectedCell}
-        onSelectCell={openCell}
-        disabled={status !== "ready" && status !== "cell_selected"}
-        boardRef={board}
-        locale={locale}
-        messages={messages}
-      />
+      <div class="game-layout">
+        <GridBoard
+          grid={grid}
+          cellStates={cells}
+          selectedCell={selectedCell}
+          onSelectCell={openCell}
+          disabled={status !== "ready" && status !== "cell_selected"}
+          boardRef={board}
+          locale={locale}
+          messages={messages}
+        />
 
-      {/* Verdict and counters while playing, the result at the end; the
-          board above never moves. */}
-      <div class={`game-actions grid-actions${barState}`}>
-        {/* Mounted from the start so the first verdict is announced. At the end
-            the result title takes its place, and this only announces the copy. */}
-        <div
-          class={`game-actions-message grid-message${isComplete ? " visually-hidden" : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          {message}
-        </div>
-        {isComplete ? (
-          <GridResults
-            grid={grid}
-            cellStates={cells}
-            guessesUsed={guessesUsed}
-            verdict={finalVerdict}
-            onRestart={restart}
-            onCopied={() => setFeedback({ kind: "copied", n: ++announcements.current })}
-            onShareFailed={() => setFeedback({ kind: "shareFailed", n: ++announcements.current })}
-            titleRef={resultTitle}
-            locale={locale}
-            messages={messages}
-          />
-        ) : (
-          <div class="grid-progress">
-            <p>{messages.gridGuessesLeft(guessesLeft)}</p>
-            <p>{messages.gridCorrectCount(solvedCount, 9)}</p>
+        {/* The side panel: the sticky bar under the board on phones, a column
+            beside it from 60rem. The verdict and counters while playing, the
+            result at the end; the board never moves. */}
+        <div class={`game-actions grid-actions${barState}`}>
+          {/* Mounted from the start so the first verdict is announced. At the end
+              the result title takes its place, and this only announces the copy. */}
+          <div
+            class={`game-actions-message grid-message${isComplete ? " visually-hidden" : ""}`}
+            role="status"
+            aria-live="polite"
+          >
+            {message}
           </div>
-        )}
+          {isComplete ? (
+            <GridResults
+              grid={grid}
+              cellStates={cells}
+              guessesUsed={guessesUsed}
+              verdict={finalVerdict}
+              onRestart={restart}
+              onCopied={() => setFeedback({ kind: "copied", n: ++announcements.current })}
+              onShareFailed={() => setFeedback({ kind: "shareFailed", n: ++announcements.current })}
+              titleRef={resultTitle}
+              locale={locale}
+              messages={messages}
+            />
+          ) : (
+            <div class="grid-progress">
+              <p>{messages.gridGuessesLeft(guessesLeft)}</p>
+              <p>{messages.gridCorrectCount(solvedCount, 9)}</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {status === "cell_selected" && selectedCell && (

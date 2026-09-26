@@ -60,7 +60,7 @@ export function ConnectionsGameContent({
 
   const isGameOver = gameStatus === "won" || gameStatus === "lost";
 
-  // The verdict of the last guess shows in the action bar until the next
+  // The verdict of the last guess shows in the side panel until the next
   // tile or Clear. It never sits above the board, so the tiles do not move.
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const shares = useRef(0);
@@ -170,75 +170,83 @@ export function ConnectionsGameContent({
   else if (feedback?.kind === "wrong" || feedback?.kind === "oneAway") barState = " is-incorrect";
 
   return (
-    <section id="connections" class="game-card connections-game" aria-labelledby="connections-heading">
-      <header class="game-hud connections-hud">
-        <h2 id="connections-heading" class="visually-hidden">
-          {messages.connectionsTitle}
-        </h2>
-        <MistakesRemaining mistakesRemaining={mistakesRemaining} messages={messages} />
-      </header>
+    <section id="connections" class="game-card game-card--wide connections-game" aria-labelledby="connections-heading">
+      <h2 id="connections-heading" class="visually-hidden">
+        {messages.connectionsTitle}
+      </h2>
 
-      <ConnectionsBoard
-        categories={puzzle.categories}
-        solvedCategoryIds={solvedCategoryIds}
-        boardItems={boardItems}
-        allItems={puzzle.items}
-        selectedItemIds={selectedItemIds}
-        onToggleItem={toggle}
-        disabled={isGameOver}
-        gridRef={grid}
-        locale={locale}
-        messages={messages}
-      />
+      <div class="game-layout">
+        <ConnectionsBoard
+          categories={puzzle.categories}
+          solvedCategoryIds={solvedCategoryIds}
+          boardItems={boardItems}
+          allItems={puzzle.items}
+          selectedItemIds={selectedItemIds}
+          onToggleItem={toggle}
+          disabled={isGameOver}
+          gridRef={grid}
+          locale={locale}
+          messages={messages}
+        />
 
-      {/* Controls while playing, the result at the end; the board above never moves. */}
-      <div class={`game-actions connections-actions${barState}`}>
-        {/* Mounted from the start so the first verdict is announced. At the end
-            the result title takes the screen, and this only announces the copy. */}
-        <div
-          class={`game-actions-message connections-message${isGameOver ? " visually-hidden" : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          {message}
-        </div>
-        {isGameOver ? (
-          <ConnectionsResults
-            puzzle={puzzle}
-            gameStatus={gameStatus}
-            guessHistory={guessHistory}
+        {/* The side panel: the sticky bar under the board on phones, a column
+            beside it from 60rem. Mistakes, the verdict and the controls while
+            playing, the result at the end; the board never moves. */}
+        <div class={`game-actions connections-actions${barState}`}>
+          {/* At the end the result says how many mistakes were used, so the
+              line leaves the screen but stays for screen readers. */}
+          <MistakesRemaining
             mistakesRemaining={mistakesRemaining}
-            onRestart={restart}
-            onCopied={() => setFeedback({ kind: "copied", n: ++shares.current })}
-            onShareFailed={() => setFeedback({ kind: "shareFailed", n: ++shares.current })}
-            titleRef={resultTitle}
-            locale={locale}
             messages={messages}
+            hiddenVisually={isGameOver}
           />
-        ) : (
-          <div class="connections-controls">
-            <button type="button" class="btn btn-secondary" onClick={shuffleItems}>
-              {messages.connectionsShuffle}
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              disabled={selectedItemIds.length === 0}
-              onClick={clear}
-            >
-              {messages.connectionsDeselectAll}
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              disabled={selectedItemIds.length !== 4}
-              onKeyDown={(event) => { if (event.repeat) event.preventDefault(); }}
-              onClick={submit}
-            >
-              {messages.connectionsSubmit}
-            </button>
+          {/* Mounted from the start so the first verdict is announced. At the end
+              the result title takes the screen, and this only announces the copy. */}
+          <div
+            class={`game-actions-message connections-message${isGameOver ? " visually-hidden" : ""}`}
+            role="status"
+            aria-live="polite"
+          >
+            {message}
           </div>
-        )}
+          {isGameOver ? (
+            <ConnectionsResults
+              puzzle={puzzle}
+              gameStatus={gameStatus}
+              guessHistory={guessHistory}
+              mistakesRemaining={mistakesRemaining}
+              onRestart={restart}
+              onCopied={() => setFeedback({ kind: "copied", n: ++shares.current })}
+              onShareFailed={() => setFeedback({ kind: "shareFailed", n: ++shares.current })}
+              titleRef={resultTitle}
+              locale={locale}
+              messages={messages}
+            />
+          ) : (
+            <div class="connections-controls">
+              <button type="button" class="btn btn-secondary" onClick={shuffleItems}>
+                {messages.connectionsShuffle}
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                disabled={selectedItemIds.length === 0}
+                onClick={clear}
+              >
+                {messages.connectionsDeselectAll}
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                disabled={selectedItemIds.length !== 4}
+                onKeyDown={(event) => { if (event.repeat) event.preventDefault(); }}
+                onClick={submit}
+              >
+                {messages.connectionsSubmit}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -280,7 +288,7 @@ export function ConnectionsGame({
   if (status === "loading") {
     return (
       <div id="connections">
-        <QuizState message={messages.loading} busy={true} />
+        <QuizState message={messages.loading} busy={true} wide />
       </div>
     );
   }
@@ -289,7 +297,7 @@ export function ConnectionsGame({
     const errorMsg = errorKind === "missing" ? messages.artifactMissing : messages.loadError;
     return (
       <div id="connections">
-        <QuizState message={errorMsg} actionLabel={messages.retry} onAction={loadData} />
+        <QuizState message={errorMsg} actionLabel={messages.retry} onAction={loadData} wide />
       </div>
     );
   }

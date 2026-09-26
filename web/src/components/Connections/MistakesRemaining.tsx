@@ -4,12 +4,13 @@ export function MistakesRemaining({
   mistakesRemaining,
   maxMistakes = 4,
   messages,
+  hiddenVisually = false,
 }: MistakesRemainingProps) {
   const dots = Array.from({ length: maxMistakes }, (_, i) => i < mistakesRemaining);
   const text = messages.connectionsMistakesRemaining(mistakesRemaining);
 
   return (
-    <p class="hud-item mistakes-remaining" aria-live="polite">
+    <p class={`hud-item mistakes-remaining${hiddenVisually ? " visually-hidden" : ""}`} aria-live="polite">
       <span class="hud-label">{text}</span>
       <span class="mistakes-dots" aria-hidden="true">
         {dots.map((active, index) => (

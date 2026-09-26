@@ -68,6 +68,8 @@ export interface MistakesRemainingProps {
   mistakesRemaining: number;
   maxMistakes?: number;
   messages: Messages;
+  /** Off screen but still read by screen readers, as at the end of the game. */
+  hiddenVisually?: boolean;
 }
 
 export interface ConnectionsResultsProps {

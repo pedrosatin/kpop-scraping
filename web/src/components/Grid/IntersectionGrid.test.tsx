@@ -112,6 +112,49 @@ describe("IntersectionGrid orchestrator component", () => {
     expect(status()).not.toHaveTextContent("9 palpites restantes");
   });
 
+  it("puts the verdict and the counters in a side panel after the board", async () => {
+    await renderReady();
+
+    const card = document.querySelector("#grid")!;
+    expect(card).toHaveClass("game-card--wide");
+    const layout = card.querySelector(".game-layout")!;
+    // Board first, then the panel: reading and Tab order follow the columns.
+    const [board, panel, ...rest] = [...layout.children];
+    expect(rest).toEqual([]);
+    expect(board).toHaveClass("grid-board-wrapper");
+    expect(board!.contains(screen.getByRole("grid"))).toBe(true);
+    expect(panel).toHaveClass("game-actions");
+    // The live message, then the counters, in the DOM as on screen.
+    expect([...panel!.children].map((child) => child.className.split(" ")[0])).toEqual([
+      "game-actions-message",
+      "grid-progress",
+    ]);
+  });
+
+  it("keeps one live region, the same node from the first guess to the result", async () => {
+    await renderReady();
+
+    const statuses = () => document.querySelectorAll("#grid [role='status']");
+    expect(statuses()).toHaveLength(1);
+    const live = statuses()[0]!;
+    expect(live.closest(".game-actions")).not.toBeNull();
+
+    pick(0, 0, "TWICE");
+    await waitFor(() => expect(live).toHaveTextContent("Certa: TWICE."));
+    expect(statuses()).toHaveLength(1);
+    expect(statuses()[0]).toBe(live);
+
+    for (let i = 0; i < 8; i++) pick(0, 1, "SHINee");
+    const title = await screen.findByRole("heading", { name: "Fim da partida" });
+    expect(statuses()[0]).toBe(live);
+    // The result takes the counters' place in the same panel, after the live region.
+    const result = title.closest(".grid-result")!;
+    expect(result.parentElement).toBe(live.parentElement);
+    expect(live.compareDocumentPosition(result) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.querySelector(".grid-progress")).toBeNull();
+    expect(within(result as HTMLElement).getByRole("button", { name: ptMessages.showSource })).toBeInTheDocument();
+  });
+
   it("handles fetch error and allows retrying", async () => {
     vi.stubGlobal(
       "fetch",

@@ -136,24 +136,13 @@ export function NameGuessGameContent({ puzzle, locale, t }: NameGuessGameContent
   const actionsState = status === "won" ? " is-correct" : status === "lost" ? " is-incorrect" : "";
 
   return (
-    <>
-      <section
-        id="name-guess"
-        aria-label={t.title}
-        class="game-card name-guess"
-        data-contrast={highContrast ? "high" : "normal"}
-      >
-        {/* The page intro already shows the title, so the HUD only carries the date and
-            the counter. The counter stays after the last guess, so the HUD keeps its height. */}
-        <div class="game-hud name-guess-hud">
-          <p class="hud-item hud-label">
-            {t.subtitle} · <span class="name-guess-date">{puzzle.reference_date}</span>
-          </p>
-          <p role="status" aria-live="polite" class="hud-item hud-value">
-            {t.attemptsLeft}: {attemptsRemaining}/{puzzle.max_attempts}
-          </p>
-        </div>
-
+    <section
+      id="name-guess"
+      aria-label={t.title}
+      class="game-card game-card--wide name-guess"
+      data-contrast={highContrast ? "high" : "normal"}
+    >
+      <div class="game-layout">
         <div class="name-guess-play">
           <NameGuessBoard
             wordLength={puzzle.word_length}
@@ -164,62 +153,77 @@ export function NameGuessGameContent({ puzzle, locale, t }: NameGuessGameContent
             t={t}
             boardRef={board}
           />
-          {/* The visible copy of the error sits over the HUD, above the first row,
-              so it never covers the row being typed. The bar's live region below
-              announces it. */}
-          {errorDisplay && (
-            <p class="alert-error name-guess-toast" aria-hidden="true">
-              {errorDisplay}
-            </p>
-          )}
         </div>
 
-        {/* The keyboard is the game's action bar; the result takes its place at the end. */}
-        <div class={`game-actions name-guess-actions${actionsState}`}>
-          {/* Mounted from the start so the first rejected guess is announced. It is
-              visually hidden; the toast above the board shows the same text. At the
-              end it announces the outcome of Share, which the result shows too. */}
-          <div class="game-actions-message visually-hidden" role="status" aria-live="polite">
-            {errorDisplay && <p>{errorDisplay}</p>}
-            {shareMessage}
+        {/* Below 60rem the sticky bar under the board holds the HUD and the
+            keyboard, the result in its place at the end, and the contrast
+            option follows it. From 60rem the wrapper and the bar leave no box
+            (name-guess.css): the keyboard goes under the board and a narrow
+            column beside them shows the HUD, the result and the option. */}
+        <div class="game-layout-side">
+          <div class={`game-actions name-guess-actions${actionsState}`}>
+            {/* The page intro already shows the title, so the HUD only carries the date
+                and the counter. The counter stays after the last guess. */}
+            <div class="game-hud name-guess-hud">
+              <p class="hud-item hud-label">
+                {t.subtitle} · <span class="name-guess-date">{puzzle.reference_date}</span>
+              </p>
+              <p role="status" aria-live="polite" class="hud-item hud-value">
+                {t.attemptsLeft}: {attemptsRemaining}/{puzzle.max_attempts}
+              </p>
+            </div>
+            {/* The visible copy of the error sits over the HUD, so it never covers
+                the row being typed. The live region below announces it. */}
+            {errorDisplay && (
+              <p class="alert-error name-guess-toast" aria-hidden="true">
+                {errorDisplay}
+              </p>
+            )}
+            {/* Mounted from the start so the first rejected guess is announced. It is
+                visually hidden; the toast above shows the same text. At the end it
+                announces the outcome of Share, which the result shows too. */}
+            <div class="game-actions-message visually-hidden" role="status" aria-live="polite">
+              {errorDisplay && <p>{errorDisplay}</p>}
+              {shareMessage}
+            </div>
+            {isGameOver ? (
+              <NameGuessResults
+                puzzle={puzzle}
+                guesses={guesses}
+                feedbacks={feedbacks}
+                status={status}
+                locale={locale}
+                highContrast={highContrast}
+                t={t}
+                onReset={restart}
+                onCopied={() => setShareFeedback({ kind: "copied", n: ++shares.current })}
+                onShareFailed={() => setShareFeedback({ kind: "shareFailed", n: ++shares.current })}
+                titleRef={resultTitle}
+              />
+            ) : (
+              <VirtualKeyboard
+                keyStatuses={keyStatuses}
+                onChar={addLetter}
+                onEnter={submit}
+                onBackspace={removeLetter}
+                t={t}
+              />
+            )}
           </div>
-          {isGameOver ? (
-            <NameGuessResults
-              puzzle={puzzle}
-              guesses={guesses}
-              feedbacks={feedbacks}
-              status={status}
-              locale={locale}
-              highContrast={highContrast}
-              t={t}
-              onReset={restart}
-              onCopied={() => setShareFeedback({ kind: "copied", n: ++shares.current })}
-              onShareFailed={() => setShareFeedback({ kind: "shareFailed", n: ++shares.current })}
-              titleRef={resultTitle}
-            />
-          ) : (
-            <VirtualKeyboard
-              keyStatuses={keyStatuses}
-              onChar={addLetter}
-              onEnter={submit}
-              onBackspace={removeLetter}
-              t={t}
-            />
-          )}
-        </div>
-      </section>
 
-      {/* A display preference, kept out of the card so it takes no height from the board. */}
-      <div class="name-guess-options">
-        <button
-          type="button"
-          onClick={toggleHighContrast}
-          aria-pressed={highContrast}
-          class="btn btn-secondary btn-sm"
-        >
-          {t.highContrast}
-        </button>
+          {/* A display preference, after the bar so it takes no height from the board on phones. */}
+          <div class="name-guess-options">
+            <button
+              type="button"
+              onClick={toggleHighContrast}
+              aria-pressed={highContrast}
+              class="btn btn-secondary btn-sm"
+            >
+              {t.highContrast}
+            </button>
+          </div>
+        </div>
       </div>
-    </>
+    </section>
   );
 }

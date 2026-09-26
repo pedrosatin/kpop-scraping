@@ -122,7 +122,8 @@
     measured on a touch screen (44px small buttons) and get their own values
     below. The floor keeps a board on screen on short landscape viewports.
     Connections (--cx-above in games/connections.css), Name guess
-    (--ng-above in games/name-guess.css) and Word search (--ws-above in
+    (--ng-above in games/name-guess.css), Grid (--grid-above in
+    games/grid.css, from 60rem) and Word search (--ws-above in
     games/word-search.css) keep their own budgets; measure them again when
     the header or GameIntro changes.
 
