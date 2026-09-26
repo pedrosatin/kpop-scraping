@@ -158,10 +158,10 @@ describe("ConnectionsGame component integration", () => {
     render(<ConnectionsGame locale="pt-BR" />);
 
     expect(screen.getByText(messages.loading)).toBeInTheDocument();
-    // Connections keeps the 42rem card while loading; only the quiz is wide.
+    // The loading card is as wide as the game card and the intro above it.
     const loadingCard = screen.getByText(messages.loading).closest(".game-card");
     expect(loadingCard).not.toBeNull();
-    expect(loadingCard).not.toHaveClass("game-card--wide");
+    expect(loadingCard).toHaveClass("game-card--wide");
 
     const twiceBtn = await screen.findByRole("button", { name: /TWICE/ });
     expect(twiceBtn).toBeInTheDocument();
@@ -189,6 +189,51 @@ describe("ConnectionsGame component integration", () => {
     expect(live).toHaveAttribute("aria-live", "polite");
     expect(live.querySelector("button")).toBeNull();
     expect(live).toHaveTextContent(pt.connectionsHint);
+  });
+
+  it("puts the mistakes, the verdict and the controls in a side panel after the board", () => {
+    const { container } = renderGame();
+    const card = container.querySelector("#connections")!;
+    expect(card).toHaveClass("game-card--wide");
+    const layout = card.querySelector(".game-layout")!;
+    // Board first, then the panel: reading and Tab order follow the columns.
+    const [board, panel, ...rest] = [...layout.children];
+    expect(rest).toEqual([]);
+    expect(board).toHaveClass("connections-board");
+    expect(panel).toHaveClass("game-actions");
+    // Mistakes, then the live message, then the controls, in the DOM as on screen.
+    const parts = [...panel!.children].map((child) => child.className.split(" ")[0]);
+    expect(parts).toEqual(["hud-item", "game-actions-message", "connections-controls"]);
+    expect(within(panel as HTMLElement).getByText("4 erros restantes")).toBeInTheDocument();
+    // Nothing is left above the board but the hidden heading.
+    expect(card.querySelector(".game-hud")).toBeNull();
+    const tabOrder = [...card.querySelectorAll<HTMLButtonElement>("button")].filter((b) => !b.disabled);
+    expect(tabOrder.at(-1)).toHaveTextContent("Embaralhar");
+    expect(tabOrder.slice(0, 16).every((b) => b.classList.contains("connections-tile"))).toBe(true);
+  });
+
+  it("keeps one live region for the verdict, the same node from the first guess to the result", () => {
+    const { container } = renderGame();
+    const statuses = () => container.querySelectorAll("[role='status']");
+    expect(statuses()).toHaveLength(1);
+    const live = statuses()[0]!;
+    expect(live.closest(".game-actions")).not.toBeNull();
+
+    guess(oneAway);
+    expect(statuses()).toHaveLength(1);
+    expect(statuses()[0]).toBe(live);
+    expect(live).toHaveTextContent(pt.connectionsOneAway);
+
+    fireEvent.click(screen.getByRole("button", { name: "Limpar seleção" }));
+    for (const category of puzzle.categories) guess(category.item_ids);
+    expect(screen.getByRole("heading", { level: 2, name: pt.connectionsGameOverWon })).toBeInTheDocument();
+    expect(statuses()).toHaveLength(1);
+    expect(statuses()[0]).toBe(live);
+    // The result sits in the same panel, after the live region.
+    const result = container.querySelector(".connections-result")!;
+    expect(result.parentElement).toBe(live.parentElement);
+    expect(live.compareDocumentPosition(result) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(result as HTMLElement).getByRole("button", { name: pt.showSource })).toBeInTheDocument();
   });
 
   it("shows a wrong guess in the bar's live region and leaves the board as it was", () => {

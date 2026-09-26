@@ -295,25 +295,28 @@
 }
 
 /*
-  At the end the bar holds the result, about 245px tall on a phone and up
-  to 175px on a desktop when the verdict of the last guess takes a second
-  line, and would cover the last row. The icon moves beside the name, names
-  keep two lines and the rows get shorter, so all nine cells stay above the
-  bar at 390x844 and 1440x900. On phones a right cell drops its check mark
-  to keep the name's width; a wrong one still has the cross and the
-  strike-through, so the states differ by more than color.
+  Below 60rem, at the end the bar holds the result, about 245px tall on a
+  phone and up to 175px on a tablet when the verdict of the last guess
+  takes a second line, and would cover the last row. The icon moves beside
+  the name, names keep two lines and the rows get shorter, so all nine cells
+  stay above the bar at 390x844 and 768x1024. On phones a right cell drops
+  its check mark to keep the name's width; a wrong one still has the cross
+  and the strike-through, so the states differ by more than color. From
+  60rem the result sits beside the board and the cells keep their size.
 */
-.grid-game:has(.grid-result) :is(.cell-solved-name, .cell-failed-status) {
-  flex-direction: row;
-  gap: 0.2rem;
+@media (max-width: 59.99rem) {
+  .grid-game:has(.grid-result) :is(.cell-solved-name, .cell-failed-status) {
+    flex-direction: row;
+    gap: 0.2rem;
+  }
+
+  .grid-game:has(.grid-result) :is(.cell-solved-name strong, .cell-attempt-text) {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
 }
 
-.grid-game:has(.grid-result) :is(.cell-solved-name strong, .cell-attempt-text) {
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-}
-
-@media (min-width: 30rem) {
+@media (min-width: 30rem) and (max-width: 59.99rem) {
   .grid-game:has(.grid-result) .grid-cell-wrapper {
     height: 3.5rem;
   }
@@ -338,7 +341,7 @@
   }
 }
 
-/* Action bar: verdict and counters while playing, the result at the end */
+/* Side panel: verdict and counters while playing, the result at the end */
 
 .grid-actions {
   flex-wrap: nowrap;
@@ -512,6 +515,78 @@
   display: block;
   color: var(--color-text-muted);
   font-size: 0.8125rem;
+}
+
+/*
+  From 60rem: the board fills the left column of .game-layout and the panel
+  sits beside it, the verdict at the top and the counters at the foot, level
+  with the last row. The cells take the height the bar took under the board:
+  --grid-above is the page top to the first row of cells (header, nav,
+  intro, card padding and the criteria row), measured at 1362x940 and
+  1440x900 in both locales (377px); --grid-below is the card's bottom
+  padding and a margin to the viewport's edge. Rows stop at 5rem, their
+  size below 60rem, and at 6.5rem.
+*/
+@media (min-width: 60rem) {
+  .grid-game {
+    --grid-above: calc(23.75rem + var(--intro-coarse-extra));
+    --grid-below: 3rem;
+  }
+
+  .grid-board-table {
+    max-width: none;
+  }
+
+  .grid-game .grid-cell-wrapper {
+    height: clamp(
+      5rem,
+      (100dvh - var(--consent-banner-height, 0px) - var(--grid-above) - var(--grid-below)) / 3 - var(--space-2),
+      6.5rem
+    );
+  }
+
+  .criterion-category {
+    font-size: 0.75rem;
+  }
+
+  .criterion-label {
+    font-size: 0.875rem;
+  }
+
+  .grid-cell-btn {
+    font-size: 0.9375rem;
+  }
+
+  .grid-message {
+    flex: none;
+  }
+
+  .grid-progress {
+    display: grid;
+    flex: none;
+    gap: var(--space-1);
+    margin-top: auto;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border-subtle);
+    font-size: 0.9375rem;
+    text-align: left;
+  }
+
+  .grid-result {
+    flex: none;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .grid-result > * {
+    flex: none;
+  }
+
+  .grid-result-buttons {
+    display: grid;
+  }
 }
 
 @media (forced-colors: active) {

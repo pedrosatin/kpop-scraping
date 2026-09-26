@@ -67,16 +67,68 @@ describe("NameGuessGame component", () => {
     expect(screen.getByLabelText("Posição 1: letra Q")).toBeInTheDocument();
   });
 
-  it("keeps the high-contrast toggle out of the HUD and the game card", () => {
+  it("puts the high-contrast toggle in the side panel, after the bar and out of the HUD", () => {
     render(<NameGuessGame locale="pt-BR" puzzle={puzzle} />);
 
     const game = screen.getByRole("region", { name: tPt.title });
     const toggle = screen.getByRole("button", { name: tPt.highContrast });
-    expect(game.contains(toggle)).toBe(false);
+    const side = toggle.closest(".game-layout-side")!;
+    expect(side).not.toBeNull();
+    expect(game.contains(side)).toBe(true);
+    // Not in the sticky bar, so it takes no height from the board on phones.
+    expect(toggle.closest(".game-actions")).toBeNull();
+    const bar = side.querySelector(".game-actions")!;
+    expect(bar.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(game.querySelector(".game-hud button")).toBeNull();
     // A plain button stays in the tab order.
     expect(toggle.tabIndex).toBe(0);
     expect(toggle).not.toBeDisabled();
+  });
+
+  it("puts the HUD and the keyboard in a side panel after the board", () => {
+    render(<NameGuessGame locale="pt-BR" puzzle={puzzle} />);
+
+    const game = screen.getByRole("region", { name: tPt.title });
+    expect(game).toHaveClass("game-card--wide");
+    const layout = game.querySelector(".game-layout")!;
+    // Board first, then the panel: reading and Tab order follow the columns.
+    const [play, side, ...rest] = [...layout.children];
+    expect(rest).toEqual([]);
+    expect(play).toHaveClass("name-guess-play");
+    expect(play!.contains(screen.getByRole("region", { name: tPt.boardAria }))).toBe(true);
+    expect(side).toHaveClass("game-layout-side");
+    expect([...side!.children].map((child) => child.className.split(" ")[0])).toEqual([
+      "game-actions",
+      "name-guess-options",
+    ]);
+    // In the bar: the HUD, the live message, then the keyboard.
+    const bar = side!.firstElementChild!;
+    expect([...bar.children].map((child) => child.className.split(" ")[0])).toEqual([
+      "game-hud",
+      "game-actions-message",
+      "virtual-keyboard",
+    ]);
+    expect(within(bar as HTMLElement).getByText(new RegExp(`${tPt.attemptsLeft}: 6/6`))).toBeInTheDocument();
+  });
+
+  it("keeps the live message in the bar, the same node from the first guess to the result", () => {
+    render(<NameGuessGame locale="pt-BR" puzzle={puzzle} />);
+
+    const live = liveMessage();
+    typeGuess("T");
+    expect(liveMessage()).toBe(live);
+    expect(live).toHaveTextContent(tPt.notEnoughLetters);
+
+    fireEvent.click(screen.getByRole("button", { name: tPt.backspace }));
+    typeGuess("TWICE");
+    expect(liveMessage()).toBe(live);
+    const title = screen.getByRole("heading", { level: 2, name: tPt.wonTitle });
+    const result = title.closest(".name-guess-result")!;
+    // The result takes the keyboard's place in the same bar, after the live region.
+    expect(result.parentElement).toBe(live.parentElement);
+    expect(live.compareDocumentPosition(result) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("group", { name: tPt.keyboardAria })).toBeNull();
+    expect(within(result as HTMLElement).getByRole("button", { name: tPt.showSource })).toBeInTheDocument();
   });
 
   it("restores the high-contrast preference from storage after a reload", () => {
@@ -243,7 +295,7 @@ describe("NameGuessGame component", () => {
     expect(screen.queryByRole("button", { name: tPt.showSource })).not.toBeInTheDocument();
   });
 
-  it("shows the error over the HUD, outside the action bar, and announces it from the bar", () => {
+  it("shows the error over the HUD in the bar, away from the board, and announces it from the bar", () => {
     render(<NameGuessGame locale="pt-BR" puzzle={puzzle} />);
 
     typeGuess("T");
@@ -254,8 +306,11 @@ describe("NameGuessGame component", () => {
     const toast = screen.getByRole("region", { name: tPt.title }).querySelector(".name-guess-toast");
     expect(toast).toHaveTextContent(tPt.notEnoughLetters);
     expect(toast).toHaveAttribute("aria-hidden", "true");
-    expect(toast!.closest(".game-actions")).toBeNull();
-    expect(toast!.closest(".name-guess-play")).not.toBeNull();
+    // It sits right after the HUD it covers, never over the rows.
+    expect(toast!.closest(".game-actions")).not.toBeNull();
+    expect(toast!.previousElementSibling).toHaveClass("game-hud");
+    expect(toast!.closest(".name-guess-play")).toBeNull();
+    expect(live.contains(toast)).toBe(false);
   });
 
   it("moves focus to the empty board after Play again", () => {

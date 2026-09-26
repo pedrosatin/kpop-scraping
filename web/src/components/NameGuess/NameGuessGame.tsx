@@ -35,7 +35,7 @@ export function NameGuessGame({ puzzle: initialPuzzle, locale, baseUrl }: NameGu
 
   if (status === "loading") {
     return (
-      <section id="name-guess" aria-live="polite" aria-busy="true" class="game-card state">
+      <section id="name-guess" aria-live="polite" aria-busy="true" class="game-card game-card--wide state">
         <span class="loader" aria-hidden="true" />
         <p class="text-muted">{t.loading}</p>
       </section>
@@ -45,7 +45,7 @@ export function NameGuessGame({ puzzle: initialPuzzle, locale, baseUrl }: NameGu
   if (status === "error" || !loadedPuzzle) {
     const errorMsg = errorKind === "missing" ? t.artifactMissing : t.loadError;
     return (
-      <section id="name-guess" class="game-card state">
+      <section id="name-guess" class="game-card game-card--wide state">
         <p class="state-error">{errorMsg}</p>
         <button type="button" onClick={loadData} class="btn btn-primary">
           {t.retry}

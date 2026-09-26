@@ -1,8 +1,10 @@
 /*
   Name guess: letter board, on-screen keyboard and the end-of-game clues.
-  The card, HUD, buttons, action bar and result stats come from components.css.
-  The keyboard lives in the sticky .game-actions bar and the result replaces
-  it there at the end, so the board above never moves.
+  The card, HUD, buttons, action bar, .game-layout columns and result stats
+  come from components.css. The HUD and the keyboard live in the
+  .game-actions bar, the side panel of .game-layout: sticky under the board
+  on phones, a column beside it from 60rem. The result replaces the
+  keyboard there at the end, so the board never moves.
 
   Letter feedback reads the --ng-* variables below. High contrast is a single
   switch, data-contrast="high" on the game card, that swaps them for the
@@ -18,30 +20,36 @@
   --ng-miss-text: var(--color-miss-text);
   --ng-gap: 0.375rem;
   --game-actions-inset: var(--space-4);
+  --game-side-width: 28rem;
   /*
     Height budget: the board shrinks so the whole keyboard fits the viewport
-    under it. Both values are measured at 390x844 and 1440x900, worst of
-    both locales:
+    under it. Measured at 390x844 and 768x1024 (one column) and at 1362x940
+    and 1440x900 (two columns), worst of both locales:
       --ng-above    page top to the board: site header, game nav, GameIntro
-                    with its "How to play" line, card padding and the HUD
-      --ng-actions  the keyboard bar (three key rows, bar padding) and the
-                    margin above it
+                    and the card's top border and padding
+      --ng-actions  one column: the keyboard bar (HUD line, three key rows,
+                    bar padding) and the margin above it; two columns: the
+                    card's bottom padding and border and a small margin to
+                    the viewport's edge
     A change to any of those parts shifts them. To remeasure, load the game
-    in both locales at both sizes, scrolled to the top, and read the board's
+    in both locales, scrolled to the top, and read the board's
     getBoundingClientRect().top for --ng-above and the keyboard bar's height
     plus its margin-top for --ng-actions; keep the largest of each.
-    Board top: 343px at 390x844 on a touch screen and at 1440x900 with a
-    fine pointer, where the Portuguese intro sentence wraps to two lines;
-    --intro-coarse-extra covers touch screens wider than a phone.
+    Board top: 300px at 390x844 on a touch screen, where the Portuguese
+    intro sentence takes three lines; 299px at 768x1024 on a touch screen
+    (8px of it --intro-coarse-extra); 277px at 1362x940 and 1440x900 with a
+    fine pointer. Keyboard bar: 200px at 390x844, 208px at 768x1024.
   */
-  --ng-above: calc(21.75rem + var(--intro-coarse-extra));
-  --ng-actions: 11.5rem;
+  --ng-above: calc(18.75rem + var(--intro-coarse-extra));
+  --ng-actions: 13.5rem;
+  --ng-tile-max: 3.5rem;
   --ng-board-max-h: calc(100dvh - var(--consent-banner-height, 0px) - var(--ng-above) - var(--ng-actions));
 }
 
 @media (min-width: 48rem) {
   .name-guess {
     --game-actions-inset: var(--space-6);
+    --ng-actions: 14rem;
   }
 }
 
@@ -60,11 +68,12 @@
   }
 }
 
-/* HUD: date and counter on one line, the same from the first guess to the result. */
+/* HUD: date and counter on one line at the top of the bar, the same from
+   the first guess to the result. */
 
 .name-guess-hud {
   flex-wrap: nowrap;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
   padding-bottom: var(--space-2);
 }
 
@@ -91,13 +100,13 @@
 }
 
 /*
-  A tile is the smallest of 3.5rem, the width share and the height share of
+  A tile is the smallest of --ng-tile-max, the width share and the height share of
   --ng-board-max-h. The height share stops at 1.75rem, so letters stay
   legible on short screens; there the page scrolls and the keyboard stays.
 */
 .name-guess-board {
   --ng-tile: min(
-    3.5rem,
+    var(--ng-tile-max),
     (100cqi - (var(--word-length, 5) - 1) * var(--ng-gap)) / var(--word-length, 5),
     max(1.75rem, (var(--ng-board-max-h) - (var(--ng-rows, 6) - 1) * var(--ng-gap)) / var(--ng-rows, 6))
   );
@@ -195,14 +204,14 @@
 }
 
 /*
-  A rejected guess shows over the HUD, just above the first row, and clears
-  on its own. It never covers the row being typed, whichever it is, and never
+  A rejected guess shows over the HUD at the top of the bar and clears on
+  its own. It never covers the row being typed, whichever it is, and never
   moves the board. The bar's hidden live region announces the same text.
 */
 .name-guess-toast {
   position: absolute;
   z-index: 1;
-  bottom: calc(100% + 1px);
+  top: var(--space-1);
   left: 50%;
   translate: -50% 0;
   width: max-content;
@@ -435,12 +444,66 @@
   font-size: 0.875rem;
 }
 
-/* Display preference below the card */
+/* Display preference after the bar */
 
 .name-guess-options {
   display: flex;
   justify-content: center;
   margin-top: var(--space-4);
+}
+
+/* Below 60rem the option follows the bar inside the card, so the bar no
+   longer reaches the card's bottom edge. */
+@media (max-width: 59.99rem) {
+  .name-guess-actions {
+    margin-bottom: 0;
+    border-radius: 0;
+  }
+}
+
+/*
+  From 60rem the bar is a column beside the board: the HUD at the top, the
+  keyboard and the option at the foot, level with the last row, or the
+  result under the HUD at the end. The tiles grow to 4.5rem: the board no
+  longer shares the height with the keyboard.
+*/
+@media (min-width: 60rem) {
+  .name-guess {
+    --ng-above: calc(17.5rem + var(--intro-coarse-extra));
+    --ng-actions: 3rem;
+    --ng-tile-max: 4.5rem;
+  }
+
+  .name-guess-actions {
+    display: flex;
+    flex: 1 1 auto;
+  }
+
+  .name-guess-hud {
+    margin-bottom: 0;
+  }
+
+  .name-guess-toast {
+    top: 0;
+  }
+
+  .virtual-keyboard {
+    width: 100%;
+    margin-top: auto;
+  }
+
+  .name-guess-result {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .name-guess-result > * {
+    flex: none;
+  }
+
+  .name-guess-options {
+    margin-top: 0;
+  }
 }
 
 /* Animations (base.css turns them off for prefers-reduced-motion) */

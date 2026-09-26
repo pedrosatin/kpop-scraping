@@ -1,38 +1,47 @@
 /*
   Connections: board, tiles, solved-category banners, the mistakes dots and
-  the result in the action bar. The card, HUD, buttons and the sticky
-  .game-actions bar come from components.css.
+  the side panel. The card, buttons, the sticky .game-actions bar and the
+  .game-layout columns come from components.css.
 
-  The controls live in the bar; the verdict of each guess shows there too,
-  in a message area that always takes two lines, so a guess never moves the
-  board. A solved category's banner takes the height of the row it replaces.
+  Below 60rem the panel is the bar under the board: mistakes, the verdict of
+  each guess and the controls, or the result at the end. The message always
+  takes two lines, so a guess never moves the board. From 60rem the same
+  panel is a column beside the board (see the end of this file). A solved
+  category's banner takes the height of the row it replaces.
 */
 
 .connections-game {
   --game-actions-inset: var(--space-4);
+  --game-side-width: 18rem;
   --cx-gap: var(--space-2);
   /*
     Height budget: the rows shrink so the board and the whole bar fit the
-    viewport. Measured at 390x844 and 1440x900, worst of both locales:
+    viewport. Measured at 390x844 and 768x1024 (one column) and at
+    1362x940 and 1440x900 (two columns), worst of both locales:
       --cx-above    page top to the board: site header, game nav, GameIntro
-                    with its "How to play" line, card padding and the HUD
-      --cx-actions  the bar (two-line message, controls, padding) and the
-                    margin above it
+                    and the card's top border and padding
+      --cx-actions  one column: the bar (mistakes line, two-line message,
+                    controls, padding) and the margin above it; two
+                    columns: the card's bottom padding and border and a
+                    small margin to the viewport's edge
     To remeasure, load the game scrolled to the top and read the board's
     getBoundingClientRect().top for --cx-above, and the bar's height plus
     its margin-top for --cx-actions; keep the largest of each. Rows stop at
     --control-height, the touch target; below that the page scrolls and the
-    sticky bar stays.
-    Board top: 327px at 390x844 on a touch screen, 326px at 1440x900 with
-    a fine pointer; --intro-coarse-extra covers touch screens wider than a
-    phone.
+    sticky bar stays. --intro-coarse-extra covers touch screens wider than
+    a phone.
+    Board top: 279px at 390x844 on a touch screen, 276px at 768x1024 on a
+    touch screen (8px of it --intro-coarse-extra), 277px at 1362x940 and
+    1440x900 with a fine pointer. Bar: 151px at 390x844 and 167px at
+    768x1024 while playing; the result bar is measured below.
   */
-  --cx-above: calc(20.5rem + var(--intro-coarse-extra));
-  --cx-actions: 8.75rem;
+  --cx-above: calc(17.5rem + var(--intro-coarse-extra));
+  --cx-actions: 10.5rem;
+  --cx-row-max: 4.5rem;
   --cx-row: clamp(
     var(--control-height),
     (100dvh - var(--consent-banner-height, 0px) - var(--cx-above) - var(--cx-actions) - 3 * var(--cx-gap)) / 4,
-    4.5rem
+    var(--cx-row-max)
   );
   display: flex;
   flex-direction: column;
@@ -41,7 +50,7 @@
 @media (min-width: 48rem) {
   .connections-game {
     --game-actions-inset: var(--space-6);
-    --cx-actions: 9.5rem;
+    --cx-actions: 11.5rem;
   }
 }
 
@@ -61,9 +70,39 @@
   }
 }
 
-.connections-hud {
-  justify-content: center;
-  margin-bottom: var(--space-3);
+/* Beside the board the panel takes no height from it: taller rows. */
+@media (min-width: 60rem) {
+  .connections-game,
+  .connections-game:has(.connections-result) {
+    --cx-above: calc(17.5rem + var(--intro-coarse-extra));
+    --cx-actions: 3rem;
+    --cx-row-max: 6rem;
+  }
+}
+
+/* Mistakes left: the first line of the bar, the top of the side panel. */
+.connections-actions .mistakes-remaining {
+  flex: 1 1 100%;
+  font-size: 0.875rem;
+}
+
+/*
+  At the end the result says how many mistakes were used. On a phone the
+  line would take height from the banners, so it leaves the screen there
+  but stays for screen readers, like .visually-hidden.
+*/
+@media (max-width: 59.99rem) {
+  .connections-actions:has(.connections-result) .mistakes-remaining {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }
 
 /* Mistakes left, one dot per attempt */
@@ -432,6 +471,54 @@
 
 .connections-source li {
   overflow-wrap: anywhere;
+}
+
+/*
+  From 60rem the panel is a column beside the board, as tall as the board:
+  mistakes and the verdict at the top, the controls at the foot, level with
+  the last row. The verdict has room for the whole explanation there. At the
+  end the result stacks in the same column, its buttons one per row.
+*/
+@media (min-width: 60rem) {
+  .connections-actions .mistakes-remaining {
+    flex: none;
+  }
+
+  .connections-feedback {
+    -webkit-line-clamp: 8;
+    line-clamp: 8;
+  }
+
+  .connections-controls {
+    display: grid;
+    flex: none;
+    grid-template-columns: 1fr 1fr;
+    margin-top: auto;
+  }
+
+  .connections-controls .btn {
+    padding-inline: var(--space-2);
+  }
+
+  .connections-controls .btn-primary {
+    grid-column: 1 / -1;
+  }
+
+  .connections-result {
+    flex: none;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .connections-result > * {
+    flex: none;
+  }
+
+  .connections-result-buttons {
+    display: grid;
+  }
 }
 
 @media (forced-colors: active) {
