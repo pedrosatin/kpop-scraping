@@ -86,25 +86,6 @@
   font-size: 0.875rem;
 }
 
-/*
-  At the end the result says how many mistakes were used. On a phone the
-  line would take height from the banners, so it leaves the screen there
-  but stays for screen readers, like .visually-hidden.
-*/
-@media (max-width: 59.99rem) {
-  .connections-actions:has(.connections-result) .mistakes-remaining {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-}
-
 /* Mistakes left, one dot per attempt */
 
 .mistakes-dots {

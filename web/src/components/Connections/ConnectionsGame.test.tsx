@@ -424,6 +424,19 @@ describe("ConnectionsGame component integration", () => {
     expect(loadPlayerStats().games.connections?.played ?? 0).toBe(0);
   });
 
+  it("hides the mistakes line visually at the end and keeps it for screen readers", () => {
+    renderGame();
+    const line = screen.getByText("4 erros restantes").closest(".mistakes-remaining")!;
+    expect(line).not.toHaveClass("visually-hidden");
+    for (const category of puzzle.categories) guess(category.item_ids);
+    expect(screen.getByRole("heading", { level: 2, name: pt.connectionsGameOverWon })).toBeInTheDocument();
+    const after = screen.getByText("4 erros restantes").closest(".mistakes-remaining")!;
+    // The shared utility class, not a copy of its rules.
+    expect(after).toHaveClass("visually-hidden");
+    expect(after).toHaveAttribute("aria-live", "polite");
+    expect(after.closest(".game-actions")).not.toBeNull();
+  });
+
   it("counts a game finished in this visit once", () => {
     renderGame();
     for (const category of puzzle.categories) guess(category.item_ids);

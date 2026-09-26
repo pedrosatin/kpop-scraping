@@ -46,11 +46,26 @@ const REORDER = [
   /grid-auto-flow\s*:[^;]*column/,
 ];
 
-function reorderingRules(css: string) {
+function reorderingRules(css: string, allowed: string[] = []) {
   return rules(css).filter(
-    ({ selector, body }) => PANEL_SELECTOR.test(selector) && REORDER.some((pattern) => pattern.test(body)),
+    ({ selector, body }) =>
+      !allowed.includes(selector) && PANEL_SELECTOR.test(selector) && REORDER.some((pattern) => pattern.test(body)),
   );
 }
+
+// The name guess from 60rem: the keyboard goes under the board and the
+// panel keeps the HUD, the result and the option. Only the HUD and its toast,
+// which take no focus, show before the keyboard while coming after it in
+// the DOM; Tab still goes from the keys to the result and the option.
+const NAME_GUESS_AREAS = [
+  ".name-guess .game-layout",
+  ".name-guess-play",
+  ".name-guess-hud",
+  ".name-guess-toast",
+  ".virtual-keyboard",
+  ".name-guess-result",
+  ".name-guess-options",
+];
 
 const SHEETS = ["components.css", "games/connections.css", "games/grid.css", "games/name-guess.css"];
 const read = (sheet: string) => readFileSync(join(STYLES, sheet), "utf-8");
@@ -71,7 +86,38 @@ describe("board and side panel layout", () => {
   });
 
   it("keeps the board and the panel in DOM order in the shared and game style sheets", () => {
-    for (const sheet of SHEETS) expect(reorderingRules(read(sheet)), sheet).toEqual([]);
+    for (const sheet of SHEETS) {
+      const allowed = sheet === "games/name-guess.css" ? NAME_GUESS_AREAS : [];
+      expect(reorderingRules(read(sheet), allowed), sheet).toEqual([]);
+    }
+  });
+
+  it("places the name guess keyboard under the board from 60rem, and nothing below it", () => {
+    const wide = rules(read("games/name-guess.css")).filter(({ media }) => media.includes("min-width: 60rem"));
+    const area = (selector: string) =>
+      wide.find((rule) => rule.selector === selector)?.body.match(/grid-area:\s*([\w-]+)/)?.[1];
+    // Every placed rule sits in the 60rem block; below it the DOM order rules.
+    const placed = rules(read("games/name-guess.css")).filter(({ body }) => /grid-(area|template-areas)\s*:/.test(body));
+    expect(placed.every(({ media }) => media.includes("min-width: 60rem"))).toBe(true);
+    const template = wide.find((rule) => rule.selector === ".name-guess .game-layout")!.body;
+    const rows = [...template.matchAll(/"([^"]+)"/g)].map((m) => m[1]!.trim().split(/\s+/));
+    expect(area(".name-guess-play")).toBe("board");
+    expect(area(".virtual-keyboard")).toBe("keys");
+    // The keys take the left column right under the board.
+    const keysRow = rows.findIndex((row) => row[0] === "keys");
+    expect(rows[keysRow - 1]![0]).toBe("board");
+    expect(keysRow).toBe(rows.length - 1);
+    // The HUD, the result and the option stay in the right column, in DOM order.
+    const right = rows.map((row) => row[1]).filter((name) => name && name !== ".");
+    expect(right).toEqual(["hud", "result", "options"]);
+    expect(area(".name-guess-hud")).toBe("hud");
+    expect(area(".name-guess-toast")).toBe("hud");
+    expect(area(".name-guess-result")).toBe("result");
+    expect(area(".name-guess-options")).toBe("options");
+  });
+
+  it("hides the connections mistakes line with the shared class, not a copy of it", () => {
+    expect(read("games/connections.css")).not.toMatch(/clip:\s*rect/);
   });
 
   it("puts the panel beside the board from 60rem and stacks them below", () => {

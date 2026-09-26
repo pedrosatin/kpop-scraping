@@ -155,9 +155,11 @@ export function NameGuessGameContent({ puzzle, locale, t }: NameGuessGameContent
           />
         </div>
 
-        {/* The side panel: on phones the sticky bar under the board with the
+        {/* Below 60rem the sticky bar under the board holds the HUD and the
             keyboard, the result in its place at the end, and the contrast
-            option after it; from 60rem a column beside the board. */}
+            option follows it. From 60rem the wrapper and the bar leave no box
+            (name-guess.css): the keyboard goes under the board and a narrow
+            column beside them shows the HUD, the result and the option. */}
         <div class="game-layout-side">
           <div class={`game-actions name-guess-actions${actionsState}`}>
             {/* The page intro already shows the title, so the HUD only carries the date

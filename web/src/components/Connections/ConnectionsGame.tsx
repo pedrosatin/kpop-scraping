@@ -193,7 +193,13 @@ export function ConnectionsGameContent({
             beside it from 60rem. Mistakes, the verdict and the controls while
             playing, the result at the end; the board never moves. */}
         <div class={`game-actions connections-actions${barState}`}>
-          <MistakesRemaining mistakesRemaining={mistakesRemaining} messages={messages} />
+          {/* At the end the result says how many mistakes were used, so the
+              line leaves the screen but stays for screen readers. */}
+          <MistakesRemaining
+            mistakesRemaining={mistakesRemaining}
+            messages={messages}
+            hiddenVisually={isGameOver}
+          />
           {/* Mounted from the start so the first verdict is announced. At the end
               the result title takes the screen, and this only announces the copy. */}
           <div
